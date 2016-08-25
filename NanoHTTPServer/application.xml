@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<application xmlns="http://ns.adobe.com/air/application/18.0">
+  <id>NanoHTTPServer</id>
+  <versionNumber>1.0</versionNumber>
+  <filename>NanoHTTPServer</filename>
+  <name>NanoHTTPServer</name>
+  <initialWindow>
+    <title>NanoHTTPServer</title>
+    <content>NanoHTTPServer.swf</content>
+    <systemChrome>standard</systemChrome>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <minimizable>true</minimizable>
+    <maximizable>true</maximizable>
+    <resizable>true</resizable>
+  </initialWindow>
+  <!-- 
+	More options:
+	http://livedocs.adobe.com/flex/3/html/File_formats_1.html#1043413
+	-->
+  <icon>
+    <image32x32>icons/NanoHTTPServer32.png</image32x32>
+    <image48x48>icons/NanoHTTPServer48.png</image48x48>
+    <image128x128>icons/NanoHTTPServer128.png</image128x128>
+    <image512x512>icons/NanoHTTPServer512.png</image512x512>
+    <image16x16>icons/NanoHTTPServer16.png</image16x16>
+  </icon>
+  <android>
+    <manifestAdditions><![CDATA[<manifest android:installLocation="auto" xmlns:android="http://schemas.android.com/apk/res/android" />]]></manifestAdditions>
+  </android>
+</application>

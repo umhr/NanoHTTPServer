@@ -1,0 +1,90 @@
+package
+{
+	import br.com.stimuli.loading.BulkLoader;
+	import br.com.stimuli.loading.lazyloaders.LazyXMLLoader;
+	import flash.display.Sprite;
+	import flash.display.StageAlign;
+	import flash.display.StageScaleMode;
+	import flash.events.Event;
+	import flash.system.Capabilities;
+	
+	/**
+	 * keep-alive
+	 * http://www.nari64.com/?p=579
+	 * 
+	 * Postによる大きなファイルの転送
+	 * FTP的
+	 * dirを返す
+	 * Nginx の設定ファイル互換？
+	 * ...
+	 * @author umhr
+	 */
+	public class Main extends Sprite 
+	{
+		
+		private var _lazyXMLLoader:LazyXMLLoader;
+		static public var settingData:SettingData;
+		static public var stageWidth:int;
+		static public var stageHeight:int;
+		static public var isPC:Boolean;
+		static public var isDebug:Boolean;
+		public function Main() 
+		{
+			if (stage) init();
+			else addEventListener(Event.ADDED_TO_STAGE, init);
+		}
+		
+		private function init(e:Event = null):void 
+		{
+			removeEventListener(Event.ADDED_TO_STAGE, init);
+			// entry point
+			
+			stage.scaleMode = StageScaleMode.NO_SCALE;
+			stage.align = StageAlign.TOP_LEFT;
+			setProperties();
+			
+			_lazyXMLLoader = new LazyXMLLoader("lazy.xml", 'one');
+			_lazyXMLLoader.addEventListener(BulkLoader.COMPLETE, lazy_complete);
+			_lazyXMLLoader.start();
+		}
+		
+		private function lazy_complete(e:Event):void 
+		{
+			_lazyXMLLoader.removeEventListener(BulkLoader.COMPLETE, lazy_complete);
+			var settingXML:XML = _lazyXMLLoader.getXML("settingXML", true);
+			
+			settingData = new SettingData(settingXML);
+			
+			addChild(new Container());
+			
+		}
+		
+		private function setProperties():void {
+			if (Capabilities.manufacturer.search('Android') > -1) {
+			} else if (Capabilities.manufacturer.search('iOS') > -1) {
+				// http://qiita.com/kazutoyo/items/d5fe118107d615e7242e
+				//device = Capabilities.os.search('x86') > -1 ? "iossimulator" : "ios";
+			} else if (Capabilities.manufacturer.search('Windows') > -1) {
+				isPC = true;
+			} else if (Capabilities.manufacturer.search('Mac') > -1) {
+				isPC = true;
+			} else if (Capabilities.manufacturer.search('Linux') > -1) {
+				isPC = true;
+			} else {
+			}
+			
+			stageWidth = isPC?stage.stageWidth:stage.fullScreenWidth;
+			stageHeight = isPC?stage.stageHeight:stage.fullScreenHeight;
+			
+			// http://qiita.com/shohei909/items/07a83b1fbf413fefd962
+			Main.isDebug = isDebug();
+			
+			function isDebug():Boolean {
+				try { trace(b.$) } catch (e:*) { var b:*= e };
+				return b;
+			}
+			
+		}
+	}
+	
+}
