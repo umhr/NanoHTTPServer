@@ -51,6 +51,7 @@ package dump
 			switch (extension) 
 			{
 				case "swf":
+					// expressInstall.swf のような外部jsを読むようなファイルの場合、エラーが出る場合がある。
 					swfLoadBytes(byteArray);
 				break;
 				case "xml":
