@@ -42,6 +42,14 @@ package jp.mztm.umhr.net.httpServer
 		
 		//public function cashPolicy(
 		
+		/**
+		 * HTTPステータスコードを適切に選ぶためのフローチャート : 難しく考えるのをやめよう | インフラ・ミドルウェア | POSTD
+		 * http://postd.cc/choosing-an-http-status-code/
+		 * @param	extention
+		 * @param	fileName
+		 * @param	isDeflate
+		 * @return
+		 */
 		public function toByteArray(extention:String = ".html", fileName:String = null, isDeflate:Boolean = false):ByteArray {
 			
 			var responceHeaderData:ResponceHeaderData = new ResponceHeaderData();
@@ -61,6 +69,9 @@ package jp.mztm.umhr.net.httpServer
 			}else if (_status == 404) {
 				responceHeaderData.statusLine = "HTTP/1.1 404 Not Found";
 				_byteArray.writeMultiByte("<html><body><h2>404 Not Found</h2></body></html>", "utf-8");
+			}else if (_status == 500) {
+				responceHeaderData.statusLine = "HTTP/1.1 500 Internal Server Error";
+				_byteArray.writeMultiByte("<html><body><h2>500 Internal Server Error</h2></body></html>", "utf-8");
 			}
 			
 			var contentType:String = contentTypeFromExtention(extention);

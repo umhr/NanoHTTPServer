@@ -26,32 +26,36 @@ package jp.mztm.umhr.net.httpServer
 		public var isKeepAlive:Boolean;
 		public var remoteAddress:String;
 		public var remotePort:uint;
+		public var postList:Object;
 		
-		public function RequestData(value:ByteArray) 
+		public function RequestData(value:ByteArray, remoteAddress:String, remotePort:uint) 
 		{
 			if (value) {
+				trace("RequestData", 1000);
 				rawByteArray = value;
+				this.remoteAddress = remoteAddress;
+				this.remotePort = remotePort;
+				trace("RequestData", 2000);
 				
-				//rawString = value.readMultiByte(value.length, "iso-8859-1");
-				//rawString = value.readMultiByte(value.length, "utf-8");
 				rawString = value.toString();
+				trace("RequestData", 3000);
 				parse(rawString);
-				trace(rawByteArray.length, rawString.length);
+				trace("RequestData", 4000);
+				trace("rawByteArray.length = ", rawByteArray.length, ", rawString.length = ", rawString.length);
+				trace("RequestData", 5000);
 			}
 		}
 		
 		private function parse(value:String):void 
 		{
-			//trace(value);
-			//Log.clear();
-			//Log.trace(value.replace(/\r/g, ""));
-			//Log.trace("//////////////////////////");
-			
+			trace("RequestData.parse");
 			var list:Array/*String*/ = value.split("\r\n");
+			trace("RequestData.parse list.length",list.length)
 			var request:String = list[0];
 			var requestList:Array/*String*/ = list[0].split(" ");
 			var method:String = requestList[0].toLowerCase();
 			urlRequestHeaderList = [];
+			var key:String = remoteAddress;// + remotePort;
 			
 			setQuery(requestList[1]);
 			
@@ -61,7 +65,12 @@ package jp.mztm.umhr.net.httpServer
 			
 			var position:uint = value.indexOf("\r\n\r\n") + 4;
 			var messageBody:String = value.substr(value.indexOf("\r\n\r\n"));
-			trace(messageBody.length);
+			trace("RequestData.parse","messageBody.length", messageBody.length);
+			trace("RequestData.parse","list.length", list.length);
+			if (list.length  < 6) {
+				PostedManager.getInstance(key).secondary(value, rawByteArray, rawString);
+				return;
+			}
 			var n:int = list.length;
 			for (var i:int = 0; i < n; i++) 
 			{
@@ -87,10 +96,13 @@ package jp.mztm.umhr.net.httpServer
 							case "Connection":
 								connection = val;
 								break;
+							case "Content-Length":
+								trace("Content-Length",val);
+								break;
 							case "Content-Type":
 								if (list[i].indexOf("boundary=") > -1) {
 									var boundary:String = list[i].substr(list[i].indexOf("boundary=") + "boundary=".length);
-									setPosted(boundary, messageBody, position);
+									PostedManager.getInstance(key).primary(boundary, messageBody, position, rawByteArray, rawString, postList);
 								}
 								break;
 							case "If-None-Match":
@@ -112,7 +124,6 @@ package jp.mztm.umhr.net.httpServer
 			
 			isKeepAlive = connection == "keep-alive";
 			
-			//trace(requestList[1]);
 		}
 		
 		public function hasQuery(query:String):Boolean {
@@ -122,28 +133,7 @@ package jp.mztm.umhr.net.httpServer
 				return queryList[query] != null;
 			}
 		}
-		private function setPosted(boundary:String, messageBody:String, position:uint):void {
-			var dataList:Array/*String*/ = messageBody.split("--" + boundary);
-			var startPosition:uint = position;
-			var endPosition:uint;
-			var n:int = dataList.length - 1;
-			if (2 > n) {
-				return;
-			}
-			var stdin:String = "";
-			for (var i:int = 1; i < n; i++) 
-			{
-				startPosition += ("--" + boundary).length;
-				endPosition = startPosition + dataList[i].length;
-				stdin += parceForm(dataList[i], startPosition, endPosition);
-				if (i < n - 1) {
-					stdin += "&";
-				}
-				startPosition = endPosition;
-			}
-			//Log.trace(stdin);
-		}
-		public var postList:Object;
+		
 		public function toCGIString():String {
 			var result:String = "";
 			var p:String;
@@ -164,111 +154,10 @@ package jp.mztm.umhr.net.httpServer
 			return result;
 		}
 		
-		
-		private function parceForm(value:String, startPosition:uint, endPosition:uint):String {
-			var name:String = "";
-			var filename:String = "";
-			var postedValue:String = "";
-			
-			// よくこむこと
-			// https://wiki.suikawiki.org/n/multipart%2Fform-data
-			
-			var valueList:Array/*String*/ = value.split("\r\n");
-			//trace(valueList[0]);// 空行
-			//trace(valueList[1]);// Content-Disposition
-			//trace(valueList[2]);// Content-Typeがある場合のみ挿入される。
-			//trace(valueList[3]);// 空行
-			//trace(valueList[4]);// data
-			//trace(valueList[5]);// 空行
-			trace(valueList.length);
-			if (valueList.length > 4) {
-				var contentDispositionList:Array/*String*/ = valueList[1].split("; ");
-				if (contentDispositionList.length > 1 && contentDispositionList[0].indexOf("Content-Disposition: form-data") > -1) {
-					if (contentDispositionList[1].indexOf('name="') > -1) {
-						name = contentDispositionList[1].substring('name="'.length, contentDispositionList[1].lastIndexOf('"'));
-					}
-					if (contentDispositionList.length > 2 && contentDispositionList[2].indexOf('filename="') > -1) {
-						filename = contentDispositionList[2].substring('filename="'.length, contentDispositionList[2].lastIndexOf('"'));
-					}
-				}
-				
-				if (valueList.length > 5 && valueList[2].indexOf("Content-Type: ") > -1) {
-					startPosition += valueList[0].length + 2;
-					startPosition += valueList[1].length + 2;
-					startPosition += valueList[2].length + 2;
-					startPosition += valueList[3].length + 2;
-					endPosition -= 2;
-					
-					if (valueList[2].indexOf("application/octet-stream") > -1 ) {
-						trace("空っぽ?");
-					}else if (valueList[2].indexOf("text/plain") > -1 ) {
-						//var len:uint = endPosition - startPosition;
-						trace(startPosition, endPosition, endPosition - startPosition);
-						var ba:ByteArray = new ByteArray();
-						ba.writeBytes(rawByteArray, startPosition, endPosition - startPosition);
-						//rawByteArray.readBytes(ba, 0, len);
-						ba.position = 0;
-						trace(rawByteArray.length, ba.length);
-						ba.position = 0;
-						trace(ba.toString());
-						new SaveFile().save(ba, "ba_" + filename);
-						//new SaveFile().saveFromString(value.substring(value.indexOf("\r\nContent-Type: text/plain\r\n\r\n") + "\r\nContent-Type: text/plain\r\n\r\n".length, value.length - 2), "hoge" + filename);
-					}else if (valueList[2].indexOf("image/jpeg") > -1 ) {
-						// jpgの場合にエンコードする
-						// 複数の添付があるとき、filenName等で日本語が使われたときが未検討
-						endPosition += rawByteArray.length - rawString.length;
-						//endPosition += 42;//Frog.jpg補正
-						trace("jpg?");
-						var baj:ByteArray = new ByteArray();
-						baj.writeBytes(rawByteArray, startPosition, endPosition - startPosition);
-						new SaveFile().save(baj, "de_" + filename);
-					}
-				}else{
-					postedValue = valueList[3];
-				}
-			}else {
-				
-			}
-			
-			if (postList == null) {
-				postList = { };
-			}
-			
-			postList[name] = postedValue;
-			return name+"=" + encodeURI(postedValue.replace(/ /g, "+"));
-			
-		}
-		
-		private function parceForm2(value:String):String {
-			
-			value = value.substr('Content-Disposition: form-data; name="'.length + 2);
-			var name:String = value.substr(0, value.indexOf('"'));
-			var valueList:Array/*String*/ = value.split("\r\n");
-			
-			if (valueList[0].indexOf('filename="') > -1) {
-				var fileName:String = valueList[0].substring(valueList[0].indexOf('filename="') + 'filename="'.length, valueList[0].lastIndexOf('"'));
-				value = fileName;
-				var contentTypeLine:String = valueList[1];
-				trace("contentType", contentTypeLine);
-				if (contentTypeLine.indexOf("image/jpeg") > -1 ) {
-					// jpgの場合にエンコードする
-				}else if (contentTypeLine.indexOf("text/plain") > -1 ) {
-					
-				}
-			}else{
-				value = valueList[2];
-			}
-			
-			if (postList == null) {
-				postList = { };
-			}
-			
-			postList[name] = value;
-			return name+"=" + encodeURI(value.replace(/ /g, "+"));
-		}
-		
 		private function setQuery(value:String):void 
 		{
+			if (value == null) { return };
+			trace("RequestData.setQuery");
 			var postion:int = value.search(/\?/);
 			if (postion == -1) {
 				setPath(value);
@@ -294,7 +183,6 @@ package jp.mztm.umhr.net.httpServer
 				queryList[key] = str;
 			}
 			
-			//Log.dump(queryList);
 		}
 		
 		private function setPath(value:String):void 
@@ -307,7 +195,7 @@ package jp.mztm.umhr.net.httpServer
 		}
 		
 		public function clone():RequestData {
-			var result:RequestData = new RequestData(null);
+			var result:RequestData = new RequestData(null, remoteAddress, remotePort);
 			result.path = path;
 			result.extention = extention;
 			result.host = host;

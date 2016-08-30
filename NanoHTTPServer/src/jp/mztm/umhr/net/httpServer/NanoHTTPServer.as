@@ -102,13 +102,29 @@ package jp.mztm.umhr.net.httpServer
 			{
 				var bytes:ByteArray = new ByteArray();
 				var socket:Socket = event.target as Socket;
+			}
+			catch (error:Error)
+			{
+				onMessage("NanoHTTPServer.onClientSocketData init:" + error.errorID + " " + error.message);
+				return;
+			}
+			
+			trace("NanoHTTPServer.onClientSocketData", socket.remoteAddress, socket.remotePort);
+			
+			try
+			{
 				/*
 				var str:String = socket.readMultiByte(socket.bytesAvailable, "us-ascii");
 				*/
+				trace("NanoHTTPServer.onClientSocketData: try", 1000);
 				socket.readBytes(bytes);
-				requestData = new RequestData(bytes);
-				requestData.remoteAddress = socket.remoteAddress;
-				requestData.remotePort = socket.remotePort;
+				trace("NanoHTTPServer.onClientSocketData: try", 1200);
+				requestData = new RequestData(bytes, socket.remoteAddress, socket.remotePort);
+				trace("NanoHTTPServer.onClientSocketData: try", 1400);
+				//requestData.remoteAddress = socket.remoteAddress;
+				//trace("NanoHTTPServer.onClientSocketData: try", 1600);
+				//requestData.remotePort = socket.remotePort;
+				//trace("NanoHTTPServer.onClientSocketData: try", 2000);
 				//trace(requestData);
 				if (requestData) {
 					var byteArray:ByteArray = onRequest(requestData);
@@ -122,6 +138,7 @@ package jp.mztm.umhr.net.httpServer
 				}else {
 					socket.writeBytes(new ResponceData(400).toByteArray());
 				}
+				//trace("NanoHTTPServer.onClientSocketData: try", 3000);
 				socket.flush();
 				
 				if(requestData.isKeepAlive){
@@ -132,7 +149,8 @@ package jp.mztm.umhr.net.httpServer
 			}
 			catch (error:Error)
 			{
-				onMessage("NanoHTTPServer.onClientSocketData:" + error.errorID + " " + error.message);
+				socket.writeBytes(new ResponceData(500).toByteArray());
+				onMessage("NanoHTTPServer.onClientSocketData 500:" + error.errorID + " " + error.message);
 			}
 		}
 		
