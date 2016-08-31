@@ -27,6 +27,7 @@ package jp.mztm.umhr.net.httpServer
 		public var remoteAddress:String;
 		public var remotePort:uint;
 		public var postList:Object;
+		public var isContentReceiving:Boolean;
 		
 		public function RequestData(value:ByteArray, remoteAddress:String, remotePort:uint) 
 		{
@@ -65,10 +66,12 @@ package jp.mztm.umhr.net.httpServer
 			
 			var position:uint = value.indexOf("\r\n\r\n") + 4;
 			var messageBody:String = value.substr(value.indexOf("\r\n\r\n"));
-			trace("RequestData.parse","messageBody.length", messageBody.length);
+			trace("RequestData.parse","messageBody.length", messageBody.length,messageBody == "\n",messageBody =="\r");
 			trace("RequestData.parse","list.length", list.length);
-			if (list.length  < 6) {
-				PostedManager.getInstance(key).secondary(value, rawByteArray, rawString);
+			//if (messageBody == "\n") {
+			if (messageBody.length == 1) {
+			//if (list.length  < 6) {
+				isContentReceiving = PostedManager.getInstance(key).secondary(value, rawByteArray, rawString);
 				return;
 			}
 			var n:int = list.length;
@@ -102,7 +105,7 @@ package jp.mztm.umhr.net.httpServer
 							case "Content-Type":
 								if (list[i].indexOf("boundary=") > -1) {
 									var boundary:String = list[i].substr(list[i].indexOf("boundary=") + "boundary=".length);
-									PostedManager.getInstance(key).primary(boundary, messageBody, position, rawByteArray, rawString, postList);
+									isContentReceiving = PostedManager.getInstance(key).primary(boundary, messageBody, position, rawByteArray, rawString, postList);
 								}
 								break;
 							case "If-None-Match":

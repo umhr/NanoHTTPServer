@@ -143,7 +143,8 @@ package jp.mztm.umhr.net.httpServer
 				
 				if(requestData.isKeepAlive){
 					KeepAliveManager.getInstance(requestData.remoteAddress + requestData.remotePort, socket);
-				}else{
+				}else if (!requestData.isContentReceiving) {
+					// コンテンツを受信中じゃない場合。
 					socket.close();
 				}
 			}

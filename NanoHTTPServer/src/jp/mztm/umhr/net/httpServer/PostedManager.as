@@ -26,7 +26,7 @@ package jp.mztm.umhr.net.httpServer
 		public var rawString:String;
 		public var postList:Object;
 		public var position:uint;
-		public function primary(boundary:String, messageBody:String, position:uint, rawByteArray:ByteArray, rawString:String, postList:Object):void
+		public function primary(boundary:String, messageBody:String, position:uint, rawByteArray:ByteArray, rawString:String, postList:Object):Boolean
 		{
 			trace("PostedManager.decode", boundary, boundary.length);
 			this.boundary = boundary;
@@ -35,10 +35,10 @@ package jp.mztm.umhr.net.httpServer
 			this.rawByteArray = rawByteArray;
 			this.rawString = rawString;
 			this.postList = postList;
-			setPosted();
+			return setPosted();
 		}
 		
-		private function setPosted():void {
+		private function setPosted():Boolean {
 			var dataList:Array/*String*/ = messageBody.split("--" + boundary);
 			var startPosition:uint = position;
 			var endPosition:uint;
@@ -46,8 +46,9 @@ package jp.mztm.umhr.net.httpServer
 			
 			trace("RequestData.setPosted n = ", n);
 			trace("RequestData.setPosted dataList[n]", dataList[n].length, dataList[n] == "--\r\n");
+			//trace(messageBody);
 			if (n <= 1) {
-				return;
+				return true;
 			}
 			
 			var stdin:String = "";
@@ -62,9 +63,10 @@ package jp.mztm.umhr.net.httpServer
 				startPosition = endPosition;
 			}
 			//Log.trace(stdin);
+			return false;
 		}
 		
-		public function secondary(messageBody:String, rawByteArray:ByteArray, rawString:String):void {
+		public function secondary(messageBody:String, rawByteArray:ByteArray, rawString:String):Boolean {
 			trace("PostedManager.secondary");
 			trace(this.messageBody.length, messageBody.length);
 			this.messageBody += messageBody;
@@ -77,7 +79,7 @@ package jp.mztm.umhr.net.httpServer
 			trace(this.rawByteArray.length);
 			this.rawString += rawString;
 			
-			setPosted();
+			return setPosted();
 		}
 		
 		
@@ -123,42 +125,12 @@ package jp.mztm.umhr.net.httpServer
 					endPosition -= 2;
 					var ba:ByteArray;
 					trace(valueList[2]);
-					if (valueList[2].indexOf("application/octet-stream") > -1 ) {
-						trace("octet-stream");
-					}else if (valueList[2].indexOf("text/plain") > -1 ) {
-						//var len:uint = endPosition - startPosition;
-						trace(startPosition, endPosition, endPosition - startPosition);
-						ba = new ByteArray();
-						ba.writeBytes(rawByteArray, startPosition, endPosition - startPosition);
-						//rawByteArray.readBytes(ba, 0, len);
-						ba.position = 0;
-						trace(rawByteArray.length, ba.length);
-						ba.position = 0;
-						trace(ba.toString());
-						new SaveFile().save(ba, "ba_" + filename);
-						//new SaveFile().saveFromString(value.substring(value.indexOf("\r\nContent-Type: text/plain\r\n\r\n") + "\r\nContent-Type: text/plain\r\n\r\n".length, value.length - 2), "hoge" + filename);
-					}else if (valueList[2].indexOf("image/jpeg") > -1 ) {
-						// jpgの場合にエンコードする
-						// 複数の添付があるとき、filenName等で日本語が使われたときが未検討
-						endPosition += rawByteArray.length - rawString.length;
-						//endPosition += 42;//Frog.jpg補正
-						trace("jpg?");
-						ba = new ByteArray();
-						ba.writeBytes(rawByteArray, startPosition, endPosition - startPosition);
-						new SaveFile().save(ba, "de_" + filename);
-					}else if (valueList[2].indexOf("image/png") > -1 ) {
-						endPosition += rawByteArray.length - rawString.length;
-						trace("png?");
-						ba = new ByteArray();
-						ba.writeBytes(rawByteArray, startPosition, endPosition - startPosition);
-						new SaveFile().save(ba, "de_" + filename);
-					}else {
-						endPosition += rawByteArray.length - rawString.length;
-						trace("?");
-						ba = new ByteArray();
-						ba.writeBytes(rawByteArray, startPosition, endPosition - startPosition);
-						new SaveFile().save(ba, "de_" + filename);
-					}
+					
+					endPosition += rawByteArray.length - rawString.length;
+					ba = new ByteArray();
+					ba.writeBytes(rawByteArray, startPosition, endPosition - startPosition);
+					new SaveFile().save(ba, "de_" + filename);
+					
 				}else{
 					postedValue = valueList[3];
 				}
