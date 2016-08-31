@@ -99,11 +99,11 @@ package jp.mztm.umhr.net.httpServer
 			//trace(valueList[4]);// data
 			//trace(valueList[5]);// 空行
 			
-			var n:int = valueList.length;
-			for (var i:int = 0; i < n; i++) 
-			{
-				trace(i, valueList[i].length);
-			}
+			//var n:int = valueList.length;
+			//for (var i:int = 0; i < n; i++) 
+			//{
+				//trace(i, valueList[i].length);
+			//}
 			
 			trace("valueList.length", valueList.length);
 			if (valueList.length > 4) {

@@ -102,7 +102,7 @@ package jp.mztm.umhr.net.httpServer
 				}
 				if (requestData.isKeepAlive) {
 					responceHeaderData.setHeader("Connection", "Keep-Alive");
-					responceHeaderData.setHeader("Keep-Alive", "timeout=1");
+					responceHeaderData.setHeader("Keep-Alive", "timeout=10");
 				}
 			}
 			

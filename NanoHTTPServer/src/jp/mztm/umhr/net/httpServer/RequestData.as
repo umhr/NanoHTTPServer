@@ -32,18 +32,18 @@ package jp.mztm.umhr.net.httpServer
 		public function RequestData(value:ByteArray, remoteAddress:String, remotePort:uint) 
 		{
 			if (value) {
-				trace("RequestData", 1000);
+				//trace("RequestData", 1000);
 				rawByteArray = value;
 				this.remoteAddress = remoteAddress;
 				this.remotePort = remotePort;
-				trace("RequestData", 2000);
+				//trace("RequestData", 2000);
 				
 				rawString = value.toString();
-				trace("RequestData", 3000);
+				//trace("RequestData", 3000);
 				parse(rawString);
-				trace("RequestData", 4000);
-				trace("rawByteArray.length = ", rawByteArray.length, ", rawString.length = ", rawString.length);
-				trace("RequestData", 5000);
+				//trace("RequestData", 4000);
+				//trace("rawByteArray.length = ", rawByteArray.length, ", rawString.length = ", rawString.length);
+				//trace("RequestData", 5000);
 			}
 		}
 		

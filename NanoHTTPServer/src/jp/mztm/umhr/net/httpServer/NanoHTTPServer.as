@@ -116,15 +116,11 @@ package jp.mztm.umhr.net.httpServer
 				/*
 				var str:String = socket.readMultiByte(socket.bytesAvailable, "us-ascii");
 				*/
-				trace("NanoHTTPServer.onClientSocketData: try", 1000);
+				//trace("NanoHTTPServer.onClientSocketData: try", 1000);
 				socket.readBytes(bytes);
-				trace("NanoHTTPServer.onClientSocketData: try", 1200);
+				//trace("NanoHTTPServer.onClientSocketData: try", 1200);
 				requestData = new RequestData(bytes, socket.remoteAddress, socket.remotePort);
-				trace("NanoHTTPServer.onClientSocketData: try", 1400);
-				//requestData.remoteAddress = socket.remoteAddress;
-				//trace("NanoHTTPServer.onClientSocketData: try", 1600);
-				//requestData.remotePort = socket.remotePort;
-				//trace("NanoHTTPServer.onClientSocketData: try", 2000);
+				//trace("NanoHTTPServer.onClientSocketData: try", 1400);
 				//trace(requestData);
 				if (requestData) {
 					var byteArray:ByteArray = onRequest(requestData);
