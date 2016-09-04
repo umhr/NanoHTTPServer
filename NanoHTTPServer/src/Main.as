@@ -12,6 +12,7 @@ package
 	 * keep-alive
 	 * http://www.nari64.com/?p=579
 	 * 
+	 * Keep-Alive timeout=2 値をResponceDataとKeepAliveManagerで連動するように。
 	 * Postによる大きなファイルの転送
 	 * FTP的
 	 * dirを返す

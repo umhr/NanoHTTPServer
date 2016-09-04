@@ -26,15 +26,18 @@ package jp.mztm.umhr.net.httpServer
 		public var rawString:String;
 		public var postList:Object;
 		public var position:uint;
+		private var _partNum:int = 0;
 		public function primary(boundary:String, messageBody:String, position:uint, rawByteArray:ByteArray, rawString:String, postList:Object):Boolean
 		{
-			trace("PostedManager.decode", boundary, boundary.length);
+			//trace("PostedManager.decode", boundary, boundary.length);
+			rawByteArray.position = 0;
 			this.boundary = boundary;
 			this.messageBody = messageBody;
 			this.position = position;
 			this.rawByteArray = rawByteArray;
 			this.rawString = rawString;
 			this.postList = postList;
+			_partNum = 1;
 			return setPosted();
 		}
 		
@@ -44,8 +47,7 @@ package jp.mztm.umhr.net.httpServer
 			var endPosition:uint;
 			var n:int = dataList.length - 1;
 			
-			trace("RequestData.setPosted n = ", n);
-			trace("RequestData.setPosted dataList[n]", dataList[n].length, dataList[n] == "--\r\n");
+			trace("PostedManager.setPosted", "n = ", n, " dataList[n]", dataList[n].length, dataList[n] == "--\r\n");
 			//trace(messageBody);
 			if (n <= 1) {
 				return true;
@@ -63,22 +65,55 @@ package jp.mztm.umhr.net.httpServer
 				startPosition = endPosition;
 			}
 			//Log.trace(stdin);
+			dispose();
 			return false;
 		}
 		
+		public function close():void {
+			if (rawByteArray == null) {
+				return;
+			}
+			var dataList:Array/*String*/ = messageBody.split("--" + boundary);
+			var startPosition:uint = position;
+			var endPosition:uint;
+			var n:int = dataList.length;
+			
+			trace("PostedManager.setPosted", "n = ", n, " dataList[n]", dataList[n - 1].length, dataList[n-1] == "--\r\n");
+			//trace(messageBody);
+			
+			var stdin:String = "";
+			for (var i:int = 1; i < n; i++) 
+			{
+				startPosition += ("--" + boundary).length;
+				endPosition = startPosition + dataList[i].length;
+				stdin += parceForm(dataList[i], startPosition, endPosition);
+				//if (i < n - 1) {
+					//stdin += "&";
+				//}
+				startPosition = endPosition;
+			}
+			dispose();
+			//Log.trace(stdin);
+		}
+		
+		
 		public function secondary(messageBody:String, rawByteArray:ByteArray, rawString:String):Boolean {
-			trace("PostedManager.secondary");
-			trace(this.messageBody.length, messageBody.length);
+			if (this.rawByteArray == null) {
+				return true;
+			}
+			_partNum ++;
+			//trace("PostedManager.secondary partNum =", _partNum);
+			//trace(this.messageBody.length, messageBody.length);
 			this.messageBody += messageBody;
-			trace(this.messageBody.length);
+			//trace(this.messageBody.length);
 			
 			//trace("rawByteArray.length", this.rawByteArray.position, rawByteArray.position);
-			trace(this.rawByteArray.length, rawByteArray.length);
+			//trace(this.rawByteArray.length, rawByteArray.length);
+			rawByteArray.position = 0;
 			this.rawByteArray.position = this.rawByteArray.length;
 			this.rawByteArray.writeBytes(rawByteArray);
-			trace(this.rawByteArray.length);
+			trace("rawByteArray.length", rawByteArray.length, this.rawByteArray.length, "partNum =", _partNum);
 			this.rawString += rawString;
-			
 			return setPosted();
 		}
 		
@@ -105,7 +140,7 @@ package jp.mztm.umhr.net.httpServer
 				//trace(i, valueList[i].length);
 			//}
 			
-			trace("valueList.length", valueList.length);
+			//trace("valueList.length", valueList.length);
 			if (valueList.length > 4) {
 				var contentDispositionList:Array/*String*/ = valueList[1].split("; ");
 				if (contentDispositionList.length > 1 && contentDispositionList[0].indexOf("Content-Disposition: form-data") > -1) {
@@ -124,7 +159,7 @@ package jp.mztm.umhr.net.httpServer
 					startPosition += valueList[3].length + 2;
 					endPosition -= 2;
 					var ba:ByteArray;
-					trace(valueList[2]);
+					//trace(valueList[2]);
 					
 					endPosition += rawByteArray.length - rawString.length;
 					ba = new ByteArray();
@@ -145,6 +180,16 @@ package jp.mztm.umhr.net.httpServer
 			postList[name] = postedValue;
 			return name+"=" + encodeURI(postedValue.replace(/ /g, "+"));
 			
+		}
+		
+		public function dispose():void {
+			this.boundary = null;
+			this.messageBody = null;
+			this.position = 0;
+			this.rawByteArray = null;
+			this.rawString = null;
+			this.postList = null;
+			_partNum = 0;
 		}
 		
 	}

@@ -49,31 +49,41 @@ package jp.mztm.umhr.net.httpServer
 		
 		private function parse(value:String):void 
 		{
-			trace("RequestData.parse");
-			var list:Array/*String*/ = value.split("\r\n");
-			trace("RequestData.parse list.length",list.length)
-			var request:String = list[0];
-			var requestList:Array/*String*/ = list[0].split(" ");
-			var method:String = requestList[0].toLowerCase();
-			urlRequestHeaderList = [];
+			//trace("RequestData.parse");
+			//trace("RequestData.parse", 1000);
 			var key:String = remoteAddress;// + remotePort;
 			
-			setQuery(requestList[1]);
+			var partingLine:int = value.indexOf("\r\n\r\n");
 			
-			if(path && path.lastIndexOf(".") > -1){
-				extention = path.substr(path.lastIndexOf("."));
-			}
-			
-			var position:uint = value.indexOf("\r\n\r\n") + 4;
-			var messageBody:String = value.substr(value.indexOf("\r\n\r\n"));
-			trace("RequestData.parse","messageBody.length", messageBody.length,messageBody == "\n",messageBody =="\r");
-			trace("RequestData.parse","list.length", list.length);
+			var messageBody:String = value.substr(partingLine);
+			//trace("RequestData.parse","messageBody.length", messageBody.length);
+			//trace("RequestData.parse","list.length", list.length);
 			//if (messageBody == "\n") {
 			if (messageBody.length == 1) {
 			//if (list.length  < 6) {
 				isContentReceiving = PostedManager.getInstance(key).secondary(value, rawByteArray, rawString);
 				return;
 			}
+			
+			var header:String = value.substr(0, partingLine);
+			trace(header);
+			
+			//trace("RequestData.parse", 2000);
+			
+			var list:Array/*String*/ = header.split("\r\n");
+			var request:String = list[0];
+			var requestList:Array/*String*/ = list[0].split(" ");
+			var method:String = requestList[0].toLowerCase();
+			urlRequestHeaderList = [];
+			var position:uint = partingLine + 4;
+			
+			
+			
+			setQuery(requestList[1]);
+			if(path && path.lastIndexOf(".") > -1){
+				extention = path.substr(path.lastIndexOf("."));
+			}
+			
 			var n:int = list.length;
 			for (var i:int = 0; i < n; i++) 
 			{
@@ -100,7 +110,7 @@ package jp.mztm.umhr.net.httpServer
 								connection = val;
 								break;
 							case "Content-Length":
-								trace("Content-Length",val);
+								//trace("Content-Length",val);
 								break;
 							case "Content-Type":
 								if (list[i].indexOf("boundary=") > -1) {
@@ -160,7 +170,7 @@ package jp.mztm.umhr.net.httpServer
 		private function setQuery(value:String):void 
 		{
 			if (value == null) { return };
-			trace("RequestData.setQuery");
+			//trace("RequestData.setQuery");
 			var postion:int = value.search(/\?/);
 			if (postion == -1) {
 				setPath(value);

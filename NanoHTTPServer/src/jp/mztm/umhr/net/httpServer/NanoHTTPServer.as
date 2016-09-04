@@ -3,6 +3,7 @@ package jp.mztm.umhr.net.httpServer
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
+	import flash.events.OutputProgressEvent;
 	import flash.events.ProgressEvent;
 	import flash.events.ServerSocketConnectEvent;
 	import flash.filesystem.File;
@@ -65,14 +66,47 @@ package jp.mztm.umhr.net.httpServer
         private function onConnect( event:ServerSocketConnectEvent ):void
         {
             var socket:Socket = event.socket;
-            socket.addEventListener( ProgressEvent.SOCKET_DATA, onClientSocketData );
+			socket.addEventListener(Event.CLOSE, socket_close);
+			socket.addEventListener(Event.CONNECT, socket_connect);
 			socket.addEventListener(IOErrorEvent.IO_ERROR, onError);
+			socket.addEventListener(OutputProgressEvent.OUTPUT_PROGRESS, socket_outputProgress);
+            socket.addEventListener(ProgressEvent.SOCKET_DATA, onClientSocketData );
 			
 			dispatchEvent(new Event(ServerSocketConnectEvent.CONNECT));
             //Log.clear();
 			
 			onMessage( "Connection from " + socket.remoteAddress + ":" + socket.remotePort);
         }
+		
+		private function socket_outputProgress(event:OutputProgressEvent):void 
+		{
+			trace("NanoHTTPServer.socket_outputProgress", event.bytesPending, event.bytesTotal);
+		}
+		
+		private function socket_connect(e:Event):void 
+		{
+			trace("NanoHTTPServer.socket_connect");
+		}
+		
+		private function socket_close(event:Event):void 
+		{
+			trace("NanoHTTPServer.socket_close");
+			try
+			{
+				var socket:Socket = event.target as Socket;
+				var bytes:ByteArray = new ByteArray();
+				socket.readBytes(bytes);
+				//bytes.position = 0;
+				trace(socket.remoteAddress, socket.remotePort, bytes.length);
+				PostedManager.getInstance(socket.remoteAddress).close();
+			}
+			catch (error:Error)
+			{
+				onMessage("NanoHTTPServer.onClientSocketData init:" + error.errorID + " " + error.message);
+				return;
+			}
+			
+		}
 		
 		private function onError(e:Event):void 
 		{
@@ -98,9 +132,9 @@ package jp.mztm.umhr.net.httpServer
 		private var _socket:Socket;
         private function onClientSocketData( event:ProgressEvent ):void
         {
+			trace("NanoHTTPServer.onClientSocketData", event.bytesLoaded);
 			try
 			{
-				var bytes:ByteArray = new ByteArray();
 				var socket:Socket = event.target as Socket;
 			}
 			catch (error:Error)
@@ -109,10 +143,11 @@ package jp.mztm.umhr.net.httpServer
 				return;
 			}
 			
-			trace("NanoHTTPServer.onClientSocketData", socket.remoteAddress, socket.remotePort);
+			//trace("NanoHTTPServer.onClientSocketData", socket.remoteAddress, socket.remotePort);
 			
 			try
 			{
+				var bytes:ByteArray = new ByteArray();
 				/*
 				var str:String = socket.readMultiByte(socket.bytesAvailable, "us-ascii");
 				*/
@@ -137,10 +172,11 @@ package jp.mztm.umhr.net.httpServer
 				//trace("NanoHTTPServer.onClientSocketData: try", 3000);
 				socket.flush();
 				
-				if(requestData.isKeepAlive){
+				if (requestData.isContentReceiving) {
+					// コンテンツを受信中の場合は、closeしない。
+				}else if(requestData.isKeepAlive){
 					KeepAliveManager.getInstance(requestData.remoteAddress + requestData.remotePort, socket);
-				}else if (!requestData.isContentReceiving) {
-					// コンテンツを受信中じゃない場合。
+				}else {
 					socket.close();
 				}
 			}
@@ -164,7 +200,7 @@ package jp.mztm.umhr.net.httpServer
 				var location:String = "http://" + requestData.host + requestData.path + "/";
 				return new ResponceData(301).setLocation(location).toByteArray();
 			}else if (file.exists) {
-					trace(requestData.rawString);
+					//trace(requestData.rawString);
 				var content:ByteArray = new ByteArray();
 				var stream:FileStream = new FileStream();
 				stream.open( file, FileMode.READ );
