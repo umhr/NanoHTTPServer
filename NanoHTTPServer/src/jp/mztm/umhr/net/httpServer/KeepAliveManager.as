@@ -35,7 +35,7 @@ package jp.mztm.umhr.net.httpServer
 			return _instanceList[key];
 		}
 		
-		private var _timer:Timer = new Timer(10000, 1);
+		private var _timer:Timer = new Timer(1000, 1);
 		private var _socket:Socket;
 		private var _key:String;
 		private function init():void

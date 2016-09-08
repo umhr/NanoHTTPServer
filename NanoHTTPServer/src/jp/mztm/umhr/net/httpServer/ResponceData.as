@@ -102,7 +102,7 @@ package jp.mztm.umhr.net.httpServer
 				}
 				if (requestData.isKeepAlive) {
 					responceHeaderData.setHeader("Connection", "Keep-Alive");
-					responceHeaderData.setHeader("Keep-Alive", "timeout=10");
+					responceHeaderData.setHeader("Keep-Alive", "timeout=1");
 				}
 			}
 			
@@ -172,7 +172,11 @@ package jp.mztm.umhr.net.httpServer
 				["text/javascript", ".js"],
 				["text/plain; charset=utf-8", ".txt", ".text", ".conf", ".list", ".as", ".log"],
 				["text/xml", ".xml"],
-				["text/richtext", ".rtx"]
+				["text/richtext", ".rtx"],
+				["video/flv", ".flv"],
+				["video/quicktime", ".mov"],
+				["video/mp4", ".mp4"],
+				["video/x-ms-wmv", ".wmv"]
 				];
 			var ex:String;
 			var n:int = list.length;
